@@ -1,0 +1,50 @@
+services:
+    backend:
+        image: backend
+        build: ./material-applications/example-backend
+        ports:
+            - 8080:8080
+        env_file:
+            - db.env
+        depends_on:
+            - database
+            - cache
+        container_name: backend
+
+    frontend:
+        image: frontend
+        build: ./material-applications/example-frontend
+        ports:
+            - 5000:5000
+        depends_on:
+            - backend
+        container_name: frontend
+
+    cache:
+        image: redis:alpine
+        command: 'redis-server --save 60 1'
+        restart: unless-stopped
+        container_name: cache
+
+    database:
+        image: postgres:alpine
+        shm_size: 128mb
+        env_file:
+            - db.env
+        restart: unless-stopped
+        volumes:
+            - ./database:/var/lib/postgresql/data
+        container_name: database
+
+    reverse-proxy:
+        image: nginx:alpine
+        ports:
+            - 80:80
+        volumes:
+            - type: bind
+              source: ./nginx.conf
+              target: /etc/nginx/nginx.conf
+        depends_on:
+            - backend
+            - frontend
+        container_name: reverse-proxy

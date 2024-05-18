@@ -1,0 +1,64 @@
+services:
+    backend:
+        image: backend
+        build: ./material-applications/example-backend
+        ports:
+            - 8080:8080
+        networks:
+            - fullstack
+        env_file:
+            - db.env
+        depends_on:
+            - database
+            - cache
+        container_name: backend
+
+    frontend:
+        image: frontend
+        build: ./material-applications/example-frontend
+        ports:
+            - 5000:5000
+        networks:
+            - fullstack
+        depends_on:
+            - backend
+        container_name: frontend
+
+    cache:
+        image: redis:alpine
+        command: 'redis-server --save 60 1'
+        networks:
+            - fullstack
+        restart: unless-stopped
+        container_name: cache
+
+    database:
+        image: postgres:alpine
+        shm_size: 128mb
+        networks:
+            - fullstack
+        env_file:
+            - db.env
+        volumes:
+            - ./database:/var/lib/postgresql/data
+        restart: unless-stopped
+        container_name: database
+
+    reverse-proxy:
+        image: nginx:alpine
+        ports:
+            - 80:80
+        networks:
+            - fullstack
+        volumes:
+            - type: bind
+              source: ./nginx.conf
+              target: /etc/nginx/nginx.conf
+        depends_on:
+            - backend
+            - frontend
+        container_name: reverse-proxy
+
+networks:
+    fullstack:
+        name: fullstack

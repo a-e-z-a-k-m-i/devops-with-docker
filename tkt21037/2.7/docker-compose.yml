@@ -1,0 +1,36 @@
+services:
+    backend:
+        image: backend
+        build: ./material-applications/example-backend
+        ports:
+            - 8080:8080
+        env_file:
+            - db.env
+        depends_on:
+            - postgres
+            - redis
+        container_name: backend
+
+    frontend:
+        image: frontend
+        build: ./material-applications/example-frontend
+        ports:
+            - 5000:5000
+        depends_on:
+            - backend
+        container_name: frontend
+
+    redis:
+        image: redis:alpine
+        command: 'redis-server --save 60 1'
+        container_name: redis
+
+    postgres:
+        image: postgres:alpine
+        shm_size: 128mb
+        env_file:
+            - db.env
+        restart: unless-stopped
+        volumes:
+            - ./database:/var/lib/postgresql/data
+        container_name: postgres
